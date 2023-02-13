@@ -3,18 +3,22 @@ package com.Muralis.minhasfinancas.service.impl;
 import java.math.BigDecimal;
 import java.util.List;
 import java.util.Objects;
+import java.util.Optional;
 
 import org.springframework.data.domain.Example;
 import org.springframework.data.domain.ExampleMatcher;
 import org.springframework.data.domain.ExampleMatcher.StringMatcher;
+import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.Muralis.minhasfinancas.exception.RegraNegocioException;
 import com.Muralis.minhasfinancas.model.entity.Lancamento;
 import com.Muralis.minhasfinancas.model.enums.StatusLancamento;
+import com.Muralis.minhasfinancas.model.enums.TipoLancamento;
 import com.Muralis.minhasfinancas.model.repository.LancamentoRepository;
 import com.Muralis.minhasfinancas.service.LancamentoService;
 
+@Service
 public class LancamentoServiceImpl implements LancamentoService {
 
 	private LancamentoRepository repository;
@@ -44,6 +48,7 @@ public class LancamentoServiceImpl implements LancamentoService {
 	}
 
 	@Override
+	@Transactional
 	public void deletar(Lancamento lancamento) {
 		Objects.requireNonNull(lancamento.getId());
 		repository.delete(lancamento);
@@ -94,6 +99,28 @@ public class LancamentoServiceImpl implements LancamentoService {
 			throw new RegraNegocioException("Informe o tipo de Lançamento");
 		}
 		
+	}
+
+	@Override
+	public Optional<Lancamento> obterPorId(Long id) {
+		return repository.findById(id);
+	}
+
+	@Override
+	@Transactional(readOnly=true)
+	public BigDecimal obterSaldoPorUsuario(Long id) {
+		BigDecimal receitas = repository.obterSaldoPorTipoLancamentoEUsuario(id, TipoLancamento.RECEITA);
+		BigDecimal despesas = repository.obterSaldoPorTipoLancamentoEUsuario(id, TipoLancamento.DESPESA);
+		
+		if(receitas ==null) {
+			receitas = BigDecimal.ZERO;
+		}
+		
+		if(despesas ==null) {
+			despesas = BigDecimal.ZERO;
+		}
+		
+		return receitas.subtract(despesas);
 	}
 
 }
